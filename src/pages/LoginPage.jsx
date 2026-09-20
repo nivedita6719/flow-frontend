@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -8,18 +8,20 @@ const LoginPage = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
+    const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [slow, setSlow] = useState(false);
+
+    // If the request is slow, it's almost always the backend cold-starting.
+    useEffect(() => {
+        if (!loading) { setSlow(false); return; }
+        const t = setTimeout(() => setSlow(true), 7000);
+        return () => clearTimeout(t);
+    }, [loading]);
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
         setError('');
     };
 
@@ -31,16 +33,13 @@ const LoginPage = () => {
         try {
             const response = await authAPI.login(formData);
             const { token, userId, email, name } = response.data.data;
-
-            // Save to context and localStorage
             login({ userId, email, name }, token);
-
-            // Redirect to dashboard
             navigate('/dashboard');
-
         } catch (err) {
             setError(
-                err.response?.data?.message || 'Login failed. Try again.'
+                err.friendlyMessage ||
+                err.response?.data?.message ||
+                'Login failed. Please try again.'
             );
         } finally {
             setLoading(false);
@@ -48,177 +47,94 @@ const LoginPage = () => {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
+        <div className="fl-auth">
 
-                {/* Logo */}
-                <div style={styles.logo}>
-                    <span style={styles.logoText}>⚡ Flow</span>
-                    <p style={styles.logoSub}>Workflow Automation</p>
+            <aside className="fl-auth__brand">
+                <div className="fl-auth__brandInner">
+                    <div className="fl-auth__logo">
+                        <span className="fl-auth__logoMark">⚡</span> Flow
+                    </div>
                 </div>
 
-                <h2 style={styles.title}>Welcome back</h2>
-                <p style={styles.subtitle}>Sign in to your account</p>
+                <div className="fl-auth__brandInner">
+                    <h1 className="fl-auth__headline">
+                        Automate your work,<br />one workflow at a time.
+                    </h1>
+                    <p className="fl-auth__sub">
+                        Connect triggers, actions and conditions — Flow runs them for you.
+                    </p>
+                    <ul className="fl-auth__features">
+                        <li><span className="fl-auth__check">✓</span> Webhook &amp; scheduled (cron) triggers</li>
+                        <li><span className="fl-auth__check">✓</span> HTTP, condition, AI and notify nodes</li>
+                        <li><span className="fl-auth__check">✓</span> Async execution with automatic retries</li>
+                        <li><span className="fl-auth__check">✓</span> Full run history &amp; per-node logs</li>
+                    </ul>
+                </div>
 
-                {/* Error message */}
-                {error && (
-                    <div style={styles.errorBox}>
-                        {error}
-                    </div>
-                )}
+                <div className="fl-auth__foot">Built with Spring Boot · Redis · PostgreSQL</div>
+            </aside>
 
-                <form onSubmit={handleSubmit}>
+            <main className="fl-auth__panel">
+                <div className="fl-card">
+                    <div className="fl-mobileLogo">⚡ Flow</div>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="priya@example.com"
-                            style={styles.input}
-                            required
-                        />
-                    </div>
+                    <h2 className="fl-card__title">Welcome back</h2>
+                    <p className="fl-card__subtitle">Sign in to your account</p>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="Enter your password"
-                            style={styles.input}
-                            required
-                        />
-                    </div>
+                    {error && <div className="fl-alert fl-alert--error">{error}</div>}
+                    {loading && slow && (
+                        <div className="fl-alert fl-alert--info">
+                            Waking up the server… this can take up to a minute on the first request. Hang tight.
+                        </div>
+                    )}
 
-                    <button
-                        type="submit"
-                        style={{
-                            ...styles.button,
-                            opacity: loading ? 0.7 : 1
-                        }}
-                        disabled={loading}
-                    >
-                        {loading ? 'Signing in...' : 'Sign in'}
-                    </button>
+                    <form onSubmit={handleSubmit}>
+                        <div className="fl-field">
+                            <label className="fl-label">Email</label>
+                            <input
+                                className="fl-input"
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="you@example.com"
+                                autoComplete="email"
+                                required
+                            />
+                        </div>
 
-                </form>
+                        <div className="fl-field">
+                            <label className="fl-label">Password</label>
+                            <input
+                                className="fl-input"
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Enter your password"
+                                autoComplete="current-password"
+                                required
+                            />
+                        </div>
 
-                <p style={styles.footerText}>
-                    Don't have an account?{' '}
-                    <Link to="/register" style={styles.link}>
-                        Create one
-                    </Link>
-                </p>
+                        <button className="fl-btn" type="submit" disabled={loading}>
+                            {loading && <span className="fl-spinner" />}
+                            {loading ? 'Signing in…' : 'Sign in'}
+                        </button>
+                    </form>
 
-            </div>
+                    <p className="fl-formFoot">
+                        Don't have an account?{' '}
+                        <Link to="/register" className="fl-link">Create one</Link>
+                    </p>
+
+                    <p className="fl-hint">
+                        First request after a while can take up to a minute while the server wakes up.
+                    </p>
+                </div>
+            </main>
         </div>
     );
-};
-
-const styles = {
-    container: {
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f8fafc',
-        padding: '20px'
-    },
-    card: {
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '40px',
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-        border: '1px solid #e2e8f0'
-    },
-    logo: {
-        textAlign: 'center',
-        marginBottom: '24px'
-    },
-    logoText: {
-        fontSize: '28px',
-        fontWeight: '700',
-        color: '#3b82f6'
-    },
-    logoSub: {
-        fontSize: '13px',
-        color: '#94a3b8',
-        marginTop: '4px'
-    },
-    title: {
-        fontSize: '22px',
-        fontWeight: '600',
-        color: '#1e293b',
-        marginBottom: '6px',
-        textAlign: 'center'
-    },
-    subtitle: {
-        fontSize: '14px',
-        color: '#64748b',
-        textAlign: 'center',
-        marginBottom: '24px'
-    },
-    errorBox: {
-        backgroundColor: '#fef2f2',
-        border: '1px solid #fecaca',
-        color: '#dc2626',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        fontSize: '14px',
-        marginBottom: '16px'
-    },
-    formGroup: {
-        marginBottom: '16px'
-    },
-    label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: '500',
-        color: '#374151',
-        marginBottom: '6px'
-    },
-    input: {
-        width: '100%',
-        padding: '10px 14px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        fontSize: '14px',
-        color: '#1e293b',
-        outline: 'none',
-        boxSizing: 'border-box',
-        transition: 'border-color 0.2s'
-    },
-    button: {
-        width: '100%',
-        padding: '12px',
-        backgroundColor: '#3b82f6',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '15px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        marginTop: '8px',
-        transition: 'background-color 0.2s'
-    },
-    footerText: {
-        textAlign: 'center',
-        fontSize: '14px',
-        color: '#64748b',
-        marginTop: '20px'
-    },
-    link: {
-        color: '#3b82f6',
-        textDecoration: 'none',
-        fontWeight: '500'
-    }
 };
 
 export default LoginPage;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -8,13 +8,16 @@ const RegisterPage = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: ''
-    });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [slow, setSlow] = useState(false);
+
+    useEffect(() => {
+        if (!loading) { setSlow(false); return; }
+        const t = setTimeout(() => setSlow(true), 7000);
+        return () => clearTimeout(t);
+    }, [loading]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,17 +26,25 @@ const RegisterPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters.');
+            return;
+        }
+
         setLoading(true);
+        setError('');
 
         try {
             const response = await authAPI.register(formData);
             const { token, userId, email, name } = response.data.data;
             login({ userId, email, name }, token);
             navigate('/dashboard');
-
         } catch (err) {
             setError(
-                err.response?.data?.message || 'Registration failed.'
+                err.friendlyMessage ||
+                err.response?.data?.message ||
+                'Registration failed. Please try again.'
             );
         } finally {
             setLoading(false);
@@ -41,187 +52,109 @@ const RegisterPage = () => {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
+        <div className="fl-auth">
 
-                <div style={styles.logo}>
-                    <span style={styles.logoText}>⚡ Flow</span>
-                    <p style={styles.logoSub}>Workflow Automation</p>
+            <aside className="fl-auth__brand">
+                <div className="fl-auth__brandInner">
+                    <div className="fl-auth__logo">
+                        <span className="fl-auth__logoMark">⚡</span> Flow
+                    </div>
                 </div>
 
-                <h2 style={styles.title}>Create account</h2>
-                <p style={styles.subtitle}>
-                    Start automating your workflows
-                </p>
+                <div className="fl-auth__brandInner">
+                    <h1 className="fl-auth__headline">
+                        Start automating<br />in under a minute.
+                    </h1>
+                    <p className="fl-auth__sub">
+                        Create an account and build your first workflow today — no credit card.
+                    </p>
+                    <ul className="fl-auth__features">
+                        <li><span className="fl-auth__check">✓</span> Free to use</li>
+                        <li><span className="fl-auth__check">✓</span> Webhook &amp; cron triggers out of the box</li>
+                        <li><span className="fl-auth__check">✓</span> Retry queue &amp; dead-letter handling</li>
+                        <li><span className="fl-auth__check">✓</span> Observability with node-level logs</li>
+                    </ul>
+                </div>
 
-                {error && (
-                    <div style={styles.errorBox}>{error}</div>
-                )}
+                <div className="fl-auth__foot">Built with Spring Boot · Redis · PostgreSQL</div>
+            </aside>
 
-                <form onSubmit={handleSubmit}>
+            <main className="fl-auth__panel">
+                <div className="fl-card">
+                    <div className="fl-mobileLogo">⚡ Flow</div>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Full Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="Priya Sharma"
-                            style={styles.input}
-                            required
-                        />
-                    </div>
+                    <h2 className="fl-card__title">Create account</h2>
+                    <p className="fl-card__subtitle">Start automating your workflows</p>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="priya@example.com"
-                            style={styles.input}
-                            required
-                        />
-                    </div>
+                    {error && <div className="fl-alert fl-alert--error">{error}</div>}
+                    {loading && slow && (
+                        <div className="fl-alert fl-alert--info">
+                            Waking up the server… this can take up to a minute on the first request. Hang tight.
+                        </div>
+                    )}
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="Minimum 6 characters"
-                            style={styles.input}
-                            required
-                            minLength={6}
-                        />
-                    </div>
+                    <form onSubmit={handleSubmit}>
+                        <div className="fl-field">
+                            <label className="fl-label">Full name</label>
+                            <input
+                                className="fl-input"
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="Priya Sharma"
+                                autoComplete="name"
+                                required
+                            />
+                        </div>
 
-                    <button
-                        type="submit"
-                        style={{
-                            ...styles.button,
-                            opacity: loading ? 0.7 : 1
-                        }}
-                        disabled={loading}
-                    >
-                        {loading ? 'Creating account...' : 'Create account'}
-                    </button>
+                        <div className="fl-field">
+                            <label className="fl-label">Email</label>
+                            <input
+                                className="fl-input"
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="you@example.com"
+                                autoComplete="email"
+                                required
+                            />
+                        </div>
 
-                </form>
+                        <div className="fl-field">
+                            <label className="fl-label">Password</label>
+                            <input
+                                className="fl-input"
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Minimum 6 characters"
+                                autoComplete="new-password"
+                                required
+                                minLength={6}
+                            />
+                        </div>
 
-                <p style={styles.footerText}>
-                    Already have an account?{' '}
-                    <Link to="/login" style={styles.link}>
-                        Sign in
-                    </Link>
-                </p>
+                        <button className="fl-btn" type="submit" disabled={loading}>
+                            {loading && <span className="fl-spinner" />}
+                            {loading ? 'Creating account…' : 'Create account'}
+                        </button>
+                    </form>
 
-            </div>
+                    <p className="fl-formFoot">
+                        Already have an account?{' '}
+                        <Link to="/login" className="fl-link">Sign in</Link>
+                    </p>
+
+                    <p className="fl-hint">
+                        First request after a while can take up to a minute while the server wakes up.
+                    </p>
+                </div>
+            </main>
         </div>
     );
-};
-
-const styles = {
-    container: {
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f8fafc',
-        padding: '20px'
-    },
-    card: {
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '40px',
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-        border: '1px solid #e2e8f0'
-    },
-    logo: {
-        textAlign: 'center',
-        marginBottom: '24px'
-    },
-    logoText: {
-        fontSize: '28px',
-        fontWeight: '700',
-        color: '#3b82f6'
-    },
-    logoSub: {
-        fontSize: '13px',
-        color: '#94a3b8',
-        marginTop: '4px'
-    },
-    title: {
-        fontSize: '22px',
-        fontWeight: '600',
-        color: '#1e293b',
-        marginBottom: '6px',
-        textAlign: 'center'
-    },
-    subtitle: {
-        fontSize: '14px',
-        color: '#64748b',
-        textAlign: 'center',
-        marginBottom: '24px'
-    },
-    errorBox: {
-        backgroundColor: '#fef2f2',
-        border: '1px solid #fecaca',
-        color: '#dc2626',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        fontSize: '14px',
-        marginBottom: '16px'
-    },
-    formGroup: {
-        marginBottom: '16px'
-    },
-    label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: '500',
-        color: '#374151',
-        marginBottom: '6px'
-    },
-    input: {
-        width: '100%',
-        padding: '10px 14px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        fontSize: '14px',
-        color: '#1e293b',
-        outline: 'none',
-        boxSizing: 'border-box'
-    },
-    button: {
-        width: '100%',
-        padding: '12px',
-        backgroundColor: '#3b82f6',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '15px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        marginTop: '8px'
-    },
-    footerText: {
-        textAlign: 'center',
-        fontSize: '14px',
-        color: '#64748b',
-        marginTop: '20px'
-    },
-    link: {
-        color: '#3b82f6',
-        textDecoration: 'none',
-        fontWeight: '500'
-    }
 };
 
 export default RegisterPage;

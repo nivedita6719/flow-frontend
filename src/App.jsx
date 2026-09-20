@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import {
     BrowserRouter,
@@ -9,14 +9,14 @@ import {
 } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { warmUpBackend } from './services/api';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import WorkflowBuilderPage from './pages/WorkflowBuilderPage';
-
-// New imports
 import WorkflowDetailPage from './pages/WorkflowDetailPage';
+import RunHistoryPage from './pages/RunHistoryPage';
 import RunDetailPage from './pages/RunDetailPage';
 
 // Protected route — redirects to login if not authenticated
@@ -122,6 +122,16 @@ const AppRoutes = () => {
                 }
             />
 
+            {/* Run history (all workflows) */}
+            <Route
+                path="/runs"
+                element={
+                    <ProtectedRoute>
+                        <RunHistoryPage />
+                    </ProtectedRoute>
+                }
+            />
+
             {/* Run details */}
             <Route
                 path="/runs/:runId"
@@ -143,6 +153,12 @@ const AppRoutes = () => {
 };
 
 const App = () => {
+
+    // Wake the (free-tier, sleeps when idle) backend as soon as the app loads,
+    // so it's ready by the time the user submits a form.
+    useEffect(() => {
+        warmUpBackend();
+    }, []);
 
     return (
         <AuthProvider>

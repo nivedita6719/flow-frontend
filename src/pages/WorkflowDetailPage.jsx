@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { workflowAPI } from '../services/api';
+import { workflowAPI, apiBaseUrl } from '../services/api';
 import Navbar from '../components/Navbar';
 
 const statusColors = {
@@ -55,7 +55,7 @@ const WorkflowDetailPage = () => {
 
     const copyWebhookUrl = () => {
         if (!workflow?.webhookKey) return;
-        const url = `http://localhost:8080/api/webhook/${id}?key=${workflow.webhookKey}`;
+        const url = `${apiBaseUrl}/webhook/${id}?key=${workflow.webhookKey}`;
         navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

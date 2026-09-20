@@ -15,48 +15,41 @@ const Navbar = () => {
 
     const isActive = (path) => location.pathname === path;
 
-    return (
-        <nav style={styles.nav}>
-            <div style={styles.inner}>
+    const initial = (user?.name || '?').trim().charAt(0).toUpperCase();
 
-                {/* Logo */}
-                <Link to="/dashboard" style={styles.logo}>
-                    ⚡ Flow
+    return (
+        <nav className="fl-nav">
+            <div className="fl-nav__inner">
+
+                <Link to="/dashboard" className="fl-nav__logo">
+                    <span className="fl-nav__logoMark">⚡</span> Flow
                 </Link>
 
-                {/* Navigation links */}
-                <div style={styles.links}>
+                <div className="fl-nav__links">
                     <Link
                         to="/dashboard"
-                        style={{
-                            ...styles.link,
-                            ...(isActive('/dashboard')
-                                ? styles.activeLink : {})
-                        }}
+                        className={
+                            'fl-nav__link' +
+                            (isActive('/dashboard') ? ' fl-nav__link--active' : '')
+                        }
                     >
                         Dashboard
                     </Link>
                     <Link
                         to="/runs"
-                        style={{
-                            ...styles.link,
-                            ...(isActive('/runs')
-                                ? styles.activeLink : {})
-                        }}
+                        className={
+                            'fl-nav__link' +
+                            (isActive('/runs') ? ' fl-nav__link--active' : '')
+                        }
                     >
                         Run History
                     </Link>
                 </div>
 
-                {/* User info + logout */}
-                <div style={styles.userSection}>
-                    <span style={styles.userName}>
-                        {user?.name}
-                    </span>
-                    <button
-                        onClick={handleLogout}
-                        style={styles.logoutBtn}
-                    >
+                <div className="fl-nav__user">
+                    <span className="fl-nav__avatar">{initial}</span>
+                    <span className="fl-nav__name">{user?.name}</span>
+                    <button onClick={handleLogout} className="fl-btn--ghost">
                         Logout
                     </button>
                 </div>
@@ -64,66 +57,6 @@ const Navbar = () => {
             </div>
         </nav>
     );
-};
-
-const styles = {
-    nav: {
-        backgroundColor: 'white',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '0 24px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-    },
-    inner: {
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: '60px'
-    },
-    logo: {
-        fontSize: '20px',
-        fontWeight: '700',
-        color: '#3b82f6',
-        textDecoration: 'none'
-    },
-    links: {
-        display: 'flex',
-        gap: '24px'
-    },
-    link: {
-        fontSize: '14px',
-        color: '#64748b',
-        textDecoration: 'none',
-        fontWeight: '500',
-        padding: '4px 0',
-        borderBottom: '2px solid transparent'
-    },
-    activeLink: {
-        color: '#3b82f6',
-        borderBottom: '2px solid #3b82f6'
-    },
-    userSection: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px'
-    },
-    userName: {
-        fontSize: '14px',
-        color: '#374151',
-        fontWeight: '500'
-    },
-    logoutBtn: {
-        padding: '6px 14px',
-        backgroundColor: 'transparent',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '13px',
-        color: '#64748b',
-        cursor: 'pointer'
-    }
 };
 
 export default Navbar;

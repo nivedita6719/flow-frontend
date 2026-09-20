@@ -15,7 +15,6 @@ const DashboardPage = () => {
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
 
-    // Load workflows on mount
     useEffect(() => {
         fetchWorkflows();
     }, []);
@@ -25,138 +24,113 @@ const DashboardPage = () => {
             setLoading(true);
             const response = await workflowAPI.getAll();
             setWorkflows(response.data.data);
+            setError('');
         } catch (err) {
-            setError('Failed to load workflows');
+            setError(err.friendlyMessage || 'Failed to load workflows');
         } finally {
             setLoading(false);
         }
     };
 
+    const flash = (setter, msg) => {
+        setter(msg);
+        setTimeout(() => setter(''), 3000);
+    };
+
     const handlePublish = async (workflowId) => {
         try {
             await workflowAPI.publish(workflowId);
-            setSuccessMsg('Workflow published successfully');
-            fetchWorkflows(); // Refresh list
-            setTimeout(() => setSuccessMsg(''), 3000);
+            flash(setSuccessMsg, 'Workflow published successfully');
+            fetchWorkflows();
         } catch (err) {
-            setError(
-                err.response?.data?.message || 'Publish failed'
-            );
-            setTimeout(() => setError(''), 3000);
+            flash(setError, err.friendlyMessage || err.response?.data?.message || 'Publish failed');
         }
     };
 
     const handleDelete = async (workflowId) => {
-        if (!window.confirm(
-            'Delete this workflow? This cannot be undone.')) {
-            return;
-        }
+        if (!window.confirm('Delete this workflow? This cannot be undone.')) return;
         try {
             await workflowAPI.delete(workflowId);
-            setSuccessMsg('Workflow deleted');
+            flash(setSuccessMsg, 'Workflow deleted');
             fetchWorkflows();
-            setTimeout(() => setSuccessMsg(''), 3000);
         } catch (err) {
-            setError('Delete failed');
-            setTimeout(() => setError(''), 3000);
+            flash(setError, err.friendlyMessage || 'Delete failed');
         }
     };
 
-    // Stats from workflows
     const stats = {
         total: workflows.length,
-        published: workflows.filter(
-            w => w.status === 'PUBLISHED').length,
-        draft: workflows.filter(
-            w => w.status === 'DRAFT').length
+        published: workflows.filter((w) => w.status === 'PUBLISHED').length,
+        draft: workflows.filter((w) => w.status === 'DRAFT').length
     };
 
     return (
-        <div style={styles.page}>
+        <div className="fl-page">
             <Navbar />
 
-            <div style={styles.container}>
+            <div className="fl-container">
 
-                {/* Welcome header */}
-                <div style={styles.header}>
+                <div className="fl-head">
                     <div>
-                        <h1 style={styles.heading}>
-                            Welcome back, {user?.name?.split(' ')[0]} 👋
+                        <h1 className="fl-head__title">
+                            Welcome back, {user?.name?.split(' ')[0] || 'there'} 👋
                         </h1>
-                        <p style={styles.subheading}>
-                            Manage and monitor your workflows
-                        </p>
+                        <p className="fl-head__sub">Manage and monitor your workflows</p>
                     </div>
-                    <button
-                        style={styles.createBtn}
-                        onClick={() => navigate('/workflows/new')}
-                    >
+                    <button className="fl-cta" onClick={() => navigate('/workflows/new')}>
                         + Create Workflow
                     </button>
                 </div>
 
-                {/* Stats row */}
-                <div style={styles.statsRow}>
-                    <div style={styles.statCard}>
-                        <div style={styles.statNumber}>
-                            {stats.total}
+                <div className="fl-stats">
+                    <div className="fl-stat fl-stat--total">
+                        <div className="fl-stat__row">
+                            <span className="fl-stat__num">{stats.total}</span>
+                            <span className="fl-stat__icon">🗂️</span>
                         </div>
-                        <div style={styles.statLabel}>
-                            Total Workflows
-                        </div>
+                        <div className="fl-stat__label">Total Workflows</div>
                     </div>
-                    <div style={styles.statCard}>
-                        <div style={{
-                            ...styles.statNumber,
-                            color: '#22c55e'
-                        }}>
-                            {stats.published}
+                    <div className="fl-stat fl-stat--pub">
+                        <div className="fl-stat__row">
+                            <span className="fl-stat__num" style={{ color: 'var(--fl-success)' }}>
+                                {stats.published}
+                            </span>
+                            <span className="fl-stat__icon">🚀</span>
                         </div>
-                        <div style={styles.statLabel}>Published</div>
+                        <div className="fl-stat__label">Published</div>
                     </div>
-                    <div style={styles.statCard}>
-                        <div style={{
-                            ...styles.statNumber,
-                            color: '#f59e0b'
-                        }}>
-                            {stats.draft}
+                    <div className="fl-stat fl-stat--draft">
+                        <div className="fl-stat__row">
+                            <span className="fl-stat__num" style={{ color: 'var(--fl-warn)' }}>
+                                {stats.draft}
+                            </span>
+                            <span className="fl-stat__icon">✏️</span>
                         </div>
-                        <div style={styles.statLabel}>Draft</div>
+                        <div className="fl-stat__label">Draft</div>
                     </div>
                 </div>
 
-                {/* Messages */}
-                {successMsg && (
-                    <div style={styles.successBox}>{successMsg}</div>
-                )}
-                {error && (
-                    <div style={styles.errorBox}>{error}</div>
-                )}
+                {successMsg && <div className="fl-alert fl-alert--success">{successMsg}</div>}
+                {error && <div className="fl-alert fl-alert--error">{error}</div>}
 
-                {/* Workflow list */}
                 {loading ? (
-                    <div style={styles.loading}>
-                        Loading workflows...
+                    <div className="fl-loading">
+                        <span className="fl-spinner" /> Loading workflows…
                     </div>
                 ) : workflows.length === 0 ? (
-                    <div style={styles.emptyState}>
-                        <div style={styles.emptyIcon}>⚡</div>
-                        <h3 style={styles.emptyTitle}>
-                            No workflows yet
-                        </h3>
-                        <p style={styles.emptyText}>
+                    <div className="fl-empty">
+                        <div className="fl-empty__icon">⚡</div>
+                        <h3 className="fl-empty__title">No workflows yet</h3>
+                        <p className="fl-empty__text">
                             Create your first workflow to start automating
                         </p>
-                        <button
-                            style={styles.createBtn}
-                            onClick={() => navigate('/workflows/new')}
-                        >
+                        <button className="fl-cta" onClick={() => navigate('/workflows/new')}>
                             Create your first workflow
                         </button>
                     </div>
                 ) : (
-                    <div style={styles.grid}>
-                        {workflows.map(workflow => (
+                    <div className="fl-grid">
+                        {workflows.map((workflow) => (
                             <WorkflowCard
                                 key={workflow.id}
                                 workflow={workflow}
@@ -170,120 +144,6 @@ const DashboardPage = () => {
             </div>
         </div>
     );
-};
-
-const styles = {
-    page: {
-        minHeight: '100vh',
-        backgroundColor: '#f8fafc'
-    },
-    container: {
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '32px 24px'
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: '28px'
-    },
-    heading: {
-        fontSize: '26px',
-        fontWeight: '700',
-        color: '#1e293b',
-        margin: 0,
-        marginBottom: '6px'
-    },
-    subheading: {
-        fontSize: '14px',
-        color: '#64748b',
-        margin: 0
-    },
-    createBtn: {
-        padding: '10px 20px',
-        backgroundColor: '#3b82f6',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'pointer'
-    },
-    statsRow: {
-        display: 'flex',
-        gap: '16px',
-        marginBottom: '28px'
-    },
-    statCard: {
-        backgroundColor: 'white',
-        border: '1px solid #e2e8f0',
-        borderRadius: '10px',
-        padding: '20px 28px',
-        textAlign: 'center',
-        minWidth: '120px'
-    },
-    statNumber: {
-        fontSize: '32px',
-        fontWeight: '700',
-        color: '#1e293b'
-    },
-    statLabel: {
-        fontSize: '13px',
-        color: '#64748b',
-        marginTop: '4px'
-    },
-    successBox: {
-        backgroundColor: '#f0fdf4',
-        border: '1px solid #bbf7d0',
-        color: '#166534',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        marginBottom: '16px',
-        fontSize: '14px'
-    },
-    errorBox: {
-        backgroundColor: '#fef2f2',
-        border: '1px solid #fecaca',
-        color: '#dc2626',
-        padding: '12px 16px',
-        borderRadius: '8px',
-        marginBottom: '16px',
-        fontSize: '14px'
-    },
-    loading: {
-        textAlign: 'center',
-        padding: '60px',
-        color: '#64748b',
-        fontSize: '16px'
-    },
-    emptyState: {
-        textAlign: 'center',
-        padding: '80px 20px',
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0'
-    },
-    emptyIcon: {
-        fontSize: '48px',
-        marginBottom: '16px'
-    },
-    emptyTitle: {
-        fontSize: '20px',
-        fontWeight: '600',
-        color: '#1e293b',
-        marginBottom: '8px'
-    },
-    emptyText: {
-        fontSize: '14px',
-        color: '#64748b',
-        marginBottom: '24px'
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-        gap: '20px'
-    }
 };
 
 export default DashboardPage;
